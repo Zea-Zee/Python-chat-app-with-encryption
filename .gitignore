@@ -1,3 +1,7 @@
-/.venv/
-/.vscode/
+/.flaskvenv/
 /build/
+**/*env*
+**/*cache*
+**/*.db*
+**/*vscode*
+fastAPI-chat/migrate
