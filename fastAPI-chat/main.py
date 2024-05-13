@@ -1,19 +1,18 @@
 from fastapi import Depends, FastAPI
 from fastapi_users import FastAPIUsers
-from auth.manager import get_user_manager
 from auth.database import User
-from auth.auth import auth_backend
 from auth.shemas import UserRead, UserCreate
 
 from operations.router import router as operations_router
+from tasks.router import router as tasks_router
+from base_config import fastapi_users, auth_backend, current_user
 
 
 app = FastAPI(title='Chat')
 
-fastapi_users = FastAPIUsers[User, int](
-    get_user_manager,
-    [auth_backend],
-)
+@app.get('/')
+async def root():
+    return 'There would be a chat'
 
 app.include_router(
     fastapi_users.get_auth_router(auth_backend),
@@ -31,7 +30,9 @@ app.include_router(
     operations_router
 )
 
-current_user = fastapi_users.current_user()
+app.include_router(
+    tasks_router
+)
 
 
 @app.get("/protected-route")

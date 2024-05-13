@@ -2,7 +2,7 @@ from datetime import datetime
 from sqlalchemy import JSON, MetaData, Table, Column, String, Integer, TIMESTAMP, ForeignKey, Boolean
 
 
-metadata = MetaData()
+from database import metadata
 
 role = Table(
     'role',
