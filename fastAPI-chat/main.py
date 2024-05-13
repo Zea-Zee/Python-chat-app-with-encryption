@@ -5,6 +5,8 @@ from auth.database import User
 from auth.auth import auth_backend
 from auth.shemas import UserRead, UserCreate
 
+from operations.router import router as operations_router
+
 
 app = FastAPI(title='Chat')
 
@@ -23,6 +25,10 @@ app.include_router(
     fastapi_users.get_register_router(UserRead, UserCreate),
     prefix="/auth",
     tags=["auth"],
+)
+
+app.include_router(
+    operations_router
 )
 
 current_user = fastapi_users.current_user()

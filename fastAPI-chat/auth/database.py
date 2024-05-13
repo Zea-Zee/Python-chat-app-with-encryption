@@ -7,7 +7,7 @@ from sqlalchemy.orm import DeclarativeBase, DeclarativeMeta, declarative_base
 from sqlalchemy import Column, Integer, String, Boolean, TIMESTAMP, ForeignKey
 
 from datetime import datetime
-from models.models import role
+from models.auth import role
 
 
 from config import DB_HOST, DB_NAME, DB_PASS, DB_PORT, DB_USER
