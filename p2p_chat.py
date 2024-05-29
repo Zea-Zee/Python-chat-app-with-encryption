@@ -5,10 +5,6 @@ import os
 import sys
 
 
-import rsa
-
-
-public_key, private_key = rsa.newkeys(512)
 
 client_names = set()
 client_socks = {}
@@ -46,13 +42,81 @@ def color_text(text, color):
     return f"{mode_codes['BOLD']}{text}{mode_codes['RESET']}"
 
 
+
+def decoder(data) :
+    bits = [int(bit) for bit in data]
+    tmp = 0
+    while 2 ** tmp < len(bits):
+        tmp += 1
+
+    posision_error = 0
+
+    bits_check = [2 ** i for i in range(tmp)]
+    bits_check.reverse()
+    for _, bit_check in enumerate(bits_check):
+        check = 0
+        for j in range(bit_check - 1, len(bits), bit_check * 2):
+            check += sum(bits[j:j + bit_check])
+        if check % 2 == 1:
+            posision_error += bit_check
+
+
+    if posision_error > 0:
+        bits[posision_error - 1] = 1 - bits[posision_error - 1]
+
+
+    decoded_data = ''.join(
+        str(bit)
+        for i, bit in enumerate(bits)
+        if not (((i+1) & ((i+1) - 1)) == 0 and (i+1) != 0)
+    )
+
+
+    part = [decoded_data[i:i + 8] for i in range(0, len(decoded_data), 8)]
+    str_binary = ' '.join(part)
+
+    value_binary = str_binary.split()
+    str_ascii = ''.join(chr(int(binary, 2)) for binary in value_binary)
+    return str_ascii
+
+
+
+
+def encoder(string):
+    binary_str = ' '.join(format(ord(char), '08b') for char in string)
+    binary_list = binary_str.split()
+    connect_string = ''.join(binary_list)
+
+    bits = [int(bit) for bit in connect_string]
+    tmp = 0
+    while 2 ** tmp < len(bits) + tmp + 1:
+        tmp += 1
+
+    result = [0] * (len(bits) + tmp)
+    j = 0
+    for i in range(len(result)):
+        if i + 1 == 2 ** j:
+            j += 1
+        else:
+            result[i] = bits.pop(0)
+
+    for i in range(tmp):
+        posision = 2 ** i - 1
+        check = 0
+        for j in range(posision, len(result), 2 * posision + 2):
+            check ^= result[j:j + posision + 1].count(1) % 2
+        result[posision] = check
+
+    return ''.join([str(bit) for bit in result])
+
+
 def receive_messages(sock):
     while True:
         try:
-            encrypted_message = sock.recv(4096)
+            encrypted_message = sock.recv(4096).decode('utf-8')
             if encrypted_message:
-                # message = rsa.decrypt(encrypted_message, private_key).decode('utf-8')
-                message = encrypted_message.decode('utf-8')
+
+                message = decoder(encrypted_message)
                 print(message)
                 if message == "that nickname already taken, try again with another one" or message == "Room on that port is full, try another port":
                     os._exit(1)
@@ -68,9 +132,9 @@ def send_message(sock, name, message, service=False):
         else:
             time_now = datetime.now().strftime('%H:%M')
             full_message = f"{name} said at {time_now}:\n   {message}"
-        # encrypted_message = rsa.encrypt(full_message.encode('utf-8'), public_key)
-        encrypted_message = full_message.encode('utf-8')
-        sock.send(encrypted_message)
+        encrypted_message = encoder(full_message)
+        # encrypted_message = full_message.encode('utf-8')
+        sock.send(f"{encrypted_message}".encode('utf-8'))
     except Exception as e:
         print(f"Error sending message: {e}")
 
@@ -90,10 +154,11 @@ def send_messages(sock, name):
 def distribute(message):
     try:
         time_now = datetime.now().strftime('%H:%M')
-        # encrypted_message = rsa.encrypt(full_message.encode('utf-8'), public_key)
         encrypted_message = message.encode('utf-8')
         for client_sock in client_socks.values():
-            client_sock.send(encrypted_message)
+            send_message(client_sock, 'server',
+                         message, service=False)
+            # client_sock.send(encrypted_message)
 
     except Exception as e:
         print(f"Error receiving message: {e}")
@@ -109,13 +174,13 @@ def handle_client_exit(sock, client_name):
             available_color_codes[client_colors[client_name]
                                   ] = color_codes[client_colors[client_name]]
         sock.close()
-        distribute(color_text(f"\t\t{client_name} has left the chat", ''))
+        distribute(f"{client_name} has left the chat")
     except Exception as e:
         print(f"Error cleaning up client {client_name}: {e}")
 
 
 def receive_and_distribute(sock, client_name):
-    distribute(color_text(f"\t\t{client_name} joined the chat", ''))
+    distribute(f"{client_name} joined the chat")
     while True:
         try:
             encrypted_message = sock.recv(4096)
@@ -123,7 +188,6 @@ def receive_and_distribute(sock, client_name):
                 if client_sock == sock:
                     continue
                 message = encrypted_message.decode('utf-8')
-                message = color_text(message, client_colors[client_name])
                 encrypted_message = message.encode('utf-8')
                 client_sock.send(encrypted_message)
 
@@ -170,8 +234,9 @@ def server(host, port):
                          "Room on that port is full, try another port", service=True)
             client_sock.close()
         else:
-            msg = color_text(
-                f"\tThere are {len(client_names)} people in that room", '')
+            msg = f"There are {len(client_names)} people in that room"
+            # msg = color_text(
+            #     f"There are {len(client_names)} people in that room", '')
             send_message(client_sock, 'server',
                          msg, service=True)
             client_names.add(client_name)
@@ -185,9 +250,10 @@ def server(host, port):
 
 
 def main():
-    server_host = input("Enter the server ip:\n")
+    # server_host = input("Enter the server ip:\n")
     server_port = int(input("Enter the server port:\n"))
-    # server_port = 9999
+    server_host = "127.0.0.1"
+    # server_port = 5632
     client(server_host, server_port)
 
 
