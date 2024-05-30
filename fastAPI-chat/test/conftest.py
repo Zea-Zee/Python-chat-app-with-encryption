@@ -13,7 +13,7 @@ BASE: DeclarativeMeta = declarative_base()
 metadata = MetaData()
 
 engine_test = create_async_engine(DATABASE_URL_TEST, poolclass=NullPool)
-async_session_maker = async_sessionmaker(engine_test, class_=AsyncSession expire_on_commit=False)
+async_session_maker = async_sessionmaker(engine_test, class_=AsyncSession, expire_on_commit=False)
 metadata.bind = engine_test
 
 
