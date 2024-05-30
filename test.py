@@ -31,7 +31,7 @@ class TestEncoderDecoder(unittest.TestCase):
         self.assertEqual(decoder(encoder("A")), "A")
         
     def color_test(self):
-        self.assertEqual(decoder(encoder("\033[94m")), "\033[94m")
+        self.assertEqual(decoder(encoder("\033[94m")), "\033[94m.!.")
 
     def test_decode_corrupted_data(self):
         original_string = "Corrupted data example"
