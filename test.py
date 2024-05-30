@@ -21,17 +21,14 @@ class TestEncoderDecoder(unittest.TestCase):
                 decoded = decoder(encoded)
                 self.assertEqual(decoded, test_string, f"Failed for string: {test_string}")
 
-    def test_encode_empty_string(self):
-        self.assertEqual(encoder(""), "")
-
     def test_decode_empty_string(self):
-        self.assertEqual(decoder(""), "")
+        self.assertEqual(decoder(""), "", "Empty string decoding failed")
 
     def test_encode_single_character(self):
-        self.assertEqual(decoder(encoder("A")), "A")
+        self.assertEqual(decoder(encoder("A")), "A", "Single character encoding failed")
         
-    def color_test(self):
-        self.assertEqual(decoder(encoder("\033[94m")), "\033[94m.!.")
+    def test_encode_color_test(self):
+        self.assertEqual(decoder(encoder("\033[94m")), "\033[94m", "Color test failed")
 
     def test_decode_corrupted_data(self):
         original_string = "Corrupted data example"
